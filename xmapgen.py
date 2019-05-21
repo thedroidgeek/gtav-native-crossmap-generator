@@ -290,7 +290,7 @@ with open(old_crossmap_filename, "r") as cmf:
 
 # todo: figure out a reliable way to do so as apparently we're still missing hashes even though we've exhausted
 #       all the scripts that exist on both old and new releases with call instruction offset delta pattern matching
-#       (~5104 stock native translations currently generatable (~7min) from a 5120 desired goal)
+#       (~5104 stock native translations currently generatable (~7min) from a 5210 desired goal)
 #       also, figure out why 0x6A973569BA094650 is wrongly translated according to fivem's universal crossmap
 
 
