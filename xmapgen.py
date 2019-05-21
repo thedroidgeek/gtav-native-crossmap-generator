@@ -290,7 +290,7 @@ with open(old_crossmap_filename, "r") as cmf:
 
 # todo: figure out a reliable way to do so as apparently we're still missing hashes even though we've exhausted
 #       all the scripts that exist on both old and new releases with call instruction offset delta pattern matching
-#       (~5096 stock native translations currently generatable (~6m37s) from a 5120 desired goal)
+#       (~5104 stock native translations currently generatable (~7min) from a 5120 desired goal)
 #       also, figure out why 0x6A973569BA094650 is wrongly translated according to fivem's universal crossmap
 
 
@@ -299,16 +299,14 @@ with open(old_crossmap_filename, "r") as cmf:
 #
 
 generated_crossmap = {}
-translations_written = 0
 fc = open(new_crossmap_filename, "w")
 for new in generated_translations:
     if generated_translations[new] != new and generated_translations[new] in old_crossmap_rev:
         fc.write("0x%016X, 0x%016X,\n" % (old_crossmap_rev[generated_translations[new]], new))
         generated_crossmap[old_crossmap_rev[generated_translations[new]]] = new
-        translations_written += 1
 fc.close()
 
-log('[crossmap generator] === wrote a total of %d translations! ===' % translations_written)
+log('[crossmap generator] === wrote a total of %d translations! ===' % len(generated_crossmap))
 
 # debug
 wrong_count = 0
