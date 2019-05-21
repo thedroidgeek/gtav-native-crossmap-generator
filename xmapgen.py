@@ -21,12 +21,12 @@ generated_translations = {}
 generated_translations_rev = {} # for fast reverse lookup
 
 
-flog = open(log_filename, "w")
+logf = open(log_filename, "w")
 
 def log(message):
     timestamped = '%s %s' % (datetime.datetime.now().strftime("[%d-%m-%Y %H:%M:%S]"), message)
     print(timestamped)
-    flog.write(timestamped + '\n')
+    logf.write(timestamped + '\n')
 
 def parse_native_calls(script_file_path):
     with open(script_file_path, "rb") as f:
@@ -325,4 +325,4 @@ with open('1604_crossmap.txt', "r") as cmf:
 
 log('[crossmap verifier] summary: %d/%d (%d%%, %d missing), %d wrong translation(s), %d%% accuracy' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, ((len(generated_crossmap) - wrong_count) / len(generated_crossmap) * 100)))
 
-flog.close()
+logf.close()
