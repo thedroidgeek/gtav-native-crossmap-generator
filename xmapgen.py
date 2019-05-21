@@ -257,7 +257,7 @@ def do_pattern_based_translation(script_old, script_new, script_name='script'):
                     elif generated_translations[new_native_hash] != old_native_hash:
                         log('[pattern matching] %s: WARNING: inconsistent result for 0x%016X...' % (script_name, new_native_hash))
                 if added_translations > 0:
-                    log('[pattern matching] %s: [%d:%d] at %d (%d elements)' % (script_name, old_pattern_start, old_pattern_end, pattern_start, pattern_len))
+                    log('[pattern matching] %s (%d%%): [%d:%d] at %d (%d elements) (+%d, total: %d)' % (script_name, int(old_pattern_end / len(old_calls) * 100), old_pattern_start, old_pattern_end, pattern_start, pattern_len, added_translations, len(generated_translations)))
         offset += 1
 
 
