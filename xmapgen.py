@@ -13,7 +13,7 @@ new_script_foldername = 'game_scripts\\current'
 new_crossmap_filename = 'crossmap_out.txt'
 log_filename = 'logfile.txt'
 
-min_pattern_size = 2 # a greater value means potentially less matches but more accuracy
+min_pattern_size = 3 # a greater value means potentially less matches but more accuracy
 
 old_script_data = {}
 new_script_data = {}
@@ -243,7 +243,7 @@ def do_pattern_based_translation(script_old, script_new, script_name='script', l
             pattern_len = pattern_end - pattern_start
             old_pattern_start = offset
             old_pattern_end = offset + pattern_len
-            if pattern_len > min_pattern_size:
+            if pattern_len >= min_pattern_size:
                 added_translations = 0
                 for j in range(pattern_start, pattern_end):
                     old_native_hash = old_table[old_calls[offset + j - pattern_start][0]]
