@@ -19,6 +19,7 @@ old_script_data = {}
 new_script_data = {}
 generated_translations = {}
 generated_translations_rev = {} # for fast reverse lookup
+old_crossmap_rev = {}
 
 
 logf = open(log_filename, "w")
@@ -170,7 +171,7 @@ log('[call count matching] === translated %d natives! ===' % len(generated_trans
 #          which relies on call instruction offset delta and dynamic hash resolution
 #
 
-def generate_pattern(old_script, new_script, offset=0, low_accuracy_mode=False):
+def generate_pattern(old_script, new_script, offset=0):
     largest_match = []
     old_calls = old_script['calls']
     old_table = old_script['table']
@@ -201,25 +202,24 @@ def generate_pattern(old_script, new_script, offset=0, low_accuracy_mode=False):
     if len(largest_match) == 0:
         return []
     # pattern quality check (single match on old) - inconsistencies occur without this
-    if not low_accuracy_mode:
-        num_matches = 0
-        pattern = old_calls[offset : offset + largest_match[1] - largest_match[0]]
-        for i in range(len(old_calls) - (len(pattern) - 1)):
-            for j in range(len(pattern)):
-                # compare offset
-                if old_calls[i + j][1] != pattern[j][1]:
-                    break
-                # on match complete (last iteration)
-                if j == len(pattern) - 1:
-                    num_matches += 1
-                    if num_matches > 1:
-                        return []
-        if num_matches != 1:
-            return []
+    num_matches = 0
+    pattern = old_calls[offset : offset + largest_match[1] - largest_match[0]]
+    for i in range(len(old_calls) - (len(pattern) - 1)):
+        for j in range(len(pattern)):
+            # compare offset
+            if old_calls[i + j][1] != pattern[j][1]:
+                break
+            # on match complete (last iteration)
+            if j == len(pattern) - 1:
+                num_matches += 1
+                if num_matches > 1:
+                    return []
+    if num_matches != 1:
+        return []
     return largest_match
 
 
-def do_pattern_based_translation(script_old, script_new, script_name='script', low_accuracy_mode=False):
+def do_pattern_based_translation(script_old, script_new, script_name='script'):
     old_calls = script_old['calls']
     old_table = script_old['table']
     new_calls = script_new['calls']
@@ -233,10 +233,10 @@ def do_pattern_based_translation(script_old, script_new, script_name='script', l
                 found_unmapped = True
                 break
         if not found_unmapped:
-            if offset == 0 and not low_accuracy_mode:
+            if offset == 0:
                 log("[pattern matching] %s: fully translated" % script_name)
             break
-        pattern_coords = generate_pattern(script_old, script_new, offset, low_accuracy_mode)
+        pattern_coords = generate_pattern(script_old, script_new, offset)
         if len(pattern_coords) != 0:
             pattern_start = pattern_coords[0]
             pattern_end = pattern_coords[1]
@@ -254,10 +254,10 @@ def do_pattern_based_translation(script_old, script_new, script_name='script', l
                         generated_translations[new_native_hash] = old_native_hash
                         generated_translations_rev[old_native_hash] = new_native_hash
                         added_translations += 1
-                    elif not low_accuracy_mode and generated_translations[new_native_hash] != old_native_hash:
+                    elif generated_translations[new_native_hash] != old_native_hash:
                         log('[pattern matching] %s: WARNING: inconsistent result for 0x%016X...' % (script_name, new_native_hash))
-                if not low_accuracy_mode or added_translations > 0:
-                    log('[pattern matching] %s (%d%%): [%d:%d] at %d (%d elements) (+%d, total: %d)' % (script_name, int(old_pattern_end / len(old_calls) * 100), old_pattern_start, old_pattern_end, pattern_start, pattern_len, added_translations, len(generated_translations)))
+                if added_translations > 0:
+                    log('[pattern matching] %s: [%d:%d] at %d (%d elements)' % (script_name, old_pattern_start, old_pattern_end, pattern_start, pattern_len))
         offset += 1
 
 
@@ -274,7 +274,6 @@ for i in range(len(script_keys)):
 # stage 3: parse the old crossmap for reverse lookup
 #
 
-old_crossmap_rev = {}
 with open(old_crossmap_filename, "r") as cmf:
     line = True
     while line:
