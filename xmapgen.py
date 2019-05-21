@@ -149,6 +149,7 @@ for i in range(len(files_list)):
                 added_translations += 1
             elif generated_translations[new_native_hash] != None and generated_translations[new_native_hash] != old_native_hash:
                 log('[call count matching] WARNING: conflict found on 0x%016X, skipping for now...' % new_native_hash)
+                del generated_translations_rev[generated_translations[new_native_hash]]
                 generated_translations[new_native_hash] = None
         log('[call count matching] %s - %d (%d/%d) (+%d, total: %d)' % (file[:-9], len(old_calls), i+1, len(files_list), added_translations, len(generated_translations)))
 
