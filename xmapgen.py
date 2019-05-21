@@ -87,7 +87,7 @@ def parse_native_calls(script_file_path):
             elif bytecode[offset] == 40 or bytecode[offset] == 41:
                 offset += 4
             elif bytecode[offset] == 44: # native
-                native_index = (bytecode[offset + 2] << 8) + bytecode[offset + 3]
+                native_index = (bytecode[offset + 2] << 8) | bytecode[offset + 3]
                 script_native_call_data['calls'].append((native_index, (offset - last_offset) if last_offset > 0 else 0))
                 last_offset = offset
                 offset += 3
