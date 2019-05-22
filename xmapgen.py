@@ -139,6 +139,17 @@ for i in range(len(files_list)):
     new_calls = new_script_data[file]['calls']
     old_table = old_script_data[file]['table']
     new_table = new_script_data[file]['table']
+    '''# debug why the fuck NETWORK_SHOP_BEGIN_SERVICE and NETWORK_SHOP_CHECKOUT_START are missing from the 5100+ found matches :thonk:
+    for i in range(len(old_calls)):
+        if old_table[old_calls[i][0]] == 0x4EB807D82D2F9433: # NETWORK_SHOP_BEGIN_SERVICE
+            log('[debug] found NETWORK_SHOP_BEGIN_SERVICE in: old (%d, %d)' % (i, old_calls[i][1]))
+        if old_table[old_calls[i][0]] == 0xCEA9F48EB9CF0CC7: # NETWORK_SHOP_BEGIN_SERVICE
+            log('[debug] found NETWORK_SHOP_CHECKOUT_START in: old (%d, %d)' % (i, old_calls[i][1]))
+    for i in range(len(new_calls)):
+        if new_table[new_calls[i][0]] == 0xEC103C948D1D3BEF: # NETWORK_SHOP_BEGIN_SERVICE
+            log('[debug] found NETWORK_SHOP_BEGIN_SERVICE in: new (%d, %d)' % (i, new_calls[i][1]))
+        if new_table[new_calls[i][0]] == 0x93EA4BE98F3F425A: # NETWORK_SHOP_BEGIN_SERVICE
+            log('[debug] found NETWORK_SHOP_CHECKOUT_START in: new (%d, %d)' % (i, new_calls[i][1]))'''
     if len(old_calls) == len(new_calls) and len(old_calls) > 0:
         added_translations = 0
         for j in range(len(old_calls)):
@@ -292,6 +303,62 @@ with open(old_crossmap_filename, "r") as cmf:
 #       all the scripts that exist on both old and new releases with call instruction offset delta pattern matching
 #       (~5104 stock native translations currently generatable (~7min) from a 5210 desired goal)
 #       also, figure out why 0x6A973569BA094650 is wrongly translated according to fivem's universal crossmap
+
+# native specific call count matching attempt
+
+fallback_call_count_matching = {}
+script_keys = list(old_script_data)
+for i in range(len(script_keys)):
+    old_calls = old_script_data[script_keys[i]]['calls']
+    old_table = old_script_data[script_keys[i]]['table']
+    new_calls = new_script_data[script_keys[i]]['calls']
+    new_table = new_script_data[script_keys[i]]['table']
+    for j in range(len(old_table)):
+        if old_table[j] in old_crossmap_rev and not old_table[j] in generated_translations_rev:
+            old_count = 0
+            for k in range(len(old_calls)):
+                if old_table[old_calls[k][0]] == old_table[j]:
+                    for l in range(len(old_calls)):
+                        if old_calls[l][0] == k:
+                            old_count += 1
+            new_calls_count = {}
+            for k in range(len(new_calls)):
+                if new_calls[k][0] not in new_calls_count:
+                    new_calls_count[new_calls[k][0]] = 0
+                new_calls_count[new_calls[k][0]] += 1
+            call_count_keys = list(new_calls_count)
+            for k in range(len(call_count_keys)):
+                if new_calls_count[call_count_keys[k]] == old_count and new_table[call_count_keys[k]] not in generated_translations:
+                    if old_table[j] not in fallback_call_count_matching:
+                        fallback_call_count_matching[old_table[j]] = {}
+                    if new_table[call_count_keys[k]] not in fallback_call_count_matching[old_table[j]]:
+                        fallback_call_count_matching[old_table[j]][new_table[call_count_keys[k]]] = 1
+                    else:
+                        fallback_call_count_matching[old_table[j]][new_table[call_count_keys[k]]] += 1
+                        
+log('[debug] %s' % fallback_call_count_matching)
+
+recovered_translations = 0
+fallback_call_count_matching_keys = list(fallback_call_count_matching)
+for i in range(len(fallback_call_count_matching_keys)):
+    old_hash = fallback_call_count_matching_keys[i]
+    new_hash_keys = list(fallback_call_count_matching[old_hash])
+    upvoted_hash = (0, 0)
+    for j in range(len(new_hash_keys)):
+        vote_count = fallback_call_count_matching[old_hash][new_hash_keys[j]]
+        if vote_count > upvoted_hash[1]:
+            upvoted_hash = (new_hash_keys[j], vote_count)
+    if upvoted_hash[0] <= 1:
+        continue
+    new_hash = upvoted_hash[0]
+    if new_hash in generated_translations and generated_translations[new_hash] != old_hash:
+        log('[fallback matching] WARNING: found conflict on 0x%016X...' % new_hash)
+    else:
+        generated_translations[new_hash] = old_hash
+        generated_translations_rev[old_hash] = new_hash
+        recovered_translations += 1
+
+log('[fallback matching] recovered %d translation(s)' % recovered_translations)
 
 
 #
