@@ -139,17 +139,6 @@ for i in range(len(files_list)):
     new_calls = new_script_data[file]['calls']
     old_table = old_script_data[file]['table']
     new_table = new_script_data[file]['table']
-    '''# debug why the fuck NETWORK_SHOP_BEGIN_SERVICE and NETWORK_SHOP_CHECKOUT_START are missing from the 5100+ found matches :thonk:
-    for i in range(len(old_calls)):
-        if old_table[old_calls[i][0]] == 0x4EB807D82D2F9433: # NETWORK_SHOP_BEGIN_SERVICE
-            log('[debug] found NETWORK_SHOP_BEGIN_SERVICE in: old (%d, %d)' % (i, old_calls[i][1]))
-        if old_table[old_calls[i][0]] == 0xCEA9F48EB9CF0CC7: # NETWORK_SHOP_BEGIN_SERVICE
-            log('[debug] found NETWORK_SHOP_CHECKOUT_START in: old (%d, %d)' % (i, old_calls[i][1]))
-    for i in range(len(new_calls)):
-        if new_table[new_calls[i][0]] == 0xEC103C948D1D3BEF: # NETWORK_SHOP_BEGIN_SERVICE
-            log('[debug] found NETWORK_SHOP_BEGIN_SERVICE in: new (%d, %d)' % (i, new_calls[i][1]))
-        if new_table[new_calls[i][0]] == 0x93EA4BE98F3F425A: # NETWORK_SHOP_BEGIN_SERVICE
-            log('[debug] found NETWORK_SHOP_CHECKOUT_START in: new (%d, %d)' % (i, new_calls[i][1]))'''
     if len(old_calls) == len(new_calls) and len(old_calls) > 0:
         added_translations = 0
         for j in range(len(old_calls)):
@@ -348,7 +337,7 @@ for i in range(len(fallback_call_count_matching_keys)):
         vote_count = fallback_call_count_matching[old_hash][new_hash_keys[j]]
         if vote_count > upvoted_hash[1]:
             upvoted_hash = (new_hash_keys[j], vote_count)
-    if upvoted_hash[0] <= 1:
+    if upvoted_hash[1] < 10:
         continue
     new_hash = upvoted_hash[0]
     if new_hash in generated_translations and generated_translations[new_hash] != old_hash:
