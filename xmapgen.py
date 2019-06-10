@@ -14,7 +14,8 @@ new_script_foldername = 'game_scripts\\current'
 new_crossmap_filename = 'crossmap_out.txt'
 log_filename = 'logfile.txt'
 
-min_pattern_size = 3 # a greater value means potentially less matches but more accuracy
+min_pattern_size = 3       # the minimum size for a pattern to be considered (larger value means potentially less matches but more accuracy)
+pattern_start_offset = 10  # offset to start from before the first unmapped hash (larger value means potentially more matches but slower lookup)
 
 old_script_data = {}
 new_script_data = {}
@@ -232,7 +233,7 @@ def do_pattern_based_translation(script_old, script_new, script_name='script'):
         found_unmapped = False
         for i in range(len(old_calls) - offset):
             if old_table[old_calls[i + offset][0]] not in generated_translations_rev:
-                offset += i
+                offset += ((i - pattern_start_offset) if i >= pattern_start_offset else 0)
                 found_unmapped = True
                 break
         if not found_unmapped:
