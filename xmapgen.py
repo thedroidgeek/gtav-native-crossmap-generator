@@ -2,6 +2,7 @@
 
 import os
 import re
+import time
 import struct
 import datetime
 import operator
@@ -110,6 +111,8 @@ def parse_native_calls(script_file_path):
 
         return script_native_call_data
 
+
+start_time = time.time()
 
 #
 # stage 1: parse native table and native calls (instruction offset and native table index)
@@ -364,6 +367,9 @@ fc.close()
 
 log('[crossmap generator] === wrote a total of %d translations! ===' % len(generated_crossmap))
 
+stop_time = time.time()
+duration = stop_time - start_time
+
 # debug
 wrong_count = 0
 with open('1604_crossmap.txt', "r") as cmf:
@@ -379,6 +385,6 @@ with open('1604_crossmap.txt', "r") as cmf:
                 log('[crossmap verifier] found wrong result on 0x%016X :( (got: 0x%016X, expected: 0x%016X)' % (hash_tuple[0], generated_crossmap[hash_tuple[0]], hash_tuple[1]))
                 wrong_count += 1
 
-log('[crossmap verifier] summary: %d/%d (%d%%, %d missing), %d wrong translation(s), %d%% accuracy' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, ((len(generated_crossmap) - wrong_count) / len(generated_crossmap) * 100)))
+log('[crossmap verifier] summary: %d/%d, %d%% - %d missing, %d wrong, %d%% accuracy - took %dm%ds' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, ((len(generated_crossmap) - wrong_count) / len(generated_crossmap) * 100), duration // 60, duration % 60))
 
 logf.close()
