@@ -8,9 +8,9 @@ import datetime
 import operator
 
 
-old_script_foldername = 'game_scripts\\1493'
-old_crossmap_filename = '1493_crossmap.txt'
-new_script_foldername = 'game_scripts\\current'
+old_script_foldername = 'game_scripts\\1365'
+old_crossmap_filename = '1365_crossmap.txt'
+new_script_foldername = 'game_scripts\\1493'
 new_crossmap_filename = 'crossmap_out.txt'
 log_filename = 'logfile.txt'
 
@@ -154,7 +154,8 @@ for i in range(len(files_list)):
                 added_translations += 1
             elif generated_translations[new_native_hash] != None and generated_translations[new_native_hash] != old_native_hash:
                 log('[call count matching] WARNING: conflict found on 0x%016X, skipping for now...' % new_native_hash)
-                del generated_translations_rev[generated_translations[new_native_hash]]
+                if generated_translations[new_native_hash] in generated_translations_rev:
+                    del generated_translations_rev[generated_translations[new_native_hash]]
                 generated_translations[new_native_hash] = None
         log('[call count matching] %s - %d (%d/%d) (+%d, total: %d)' % (file[:-9], len(old_calls), i+1, len(files_list), added_translations, len(generated_translations)))
 
@@ -256,8 +257,8 @@ def do_pattern_based_translation(script_old, script_new, script_name='script', s
                     old_native_hash = old_table[old_calls[offset + j - pattern_start][0]]
                     new_native_hash = new_table[new_calls[j][0]]
                     if not new_native_hash in generated_translations:
-                        if new_native_hash == 0x6A973569BA094650:
-                            log('[pattern matching] WRONG HASH HERE OR SOMETHING')
+                        #if new_native_hash == 0x6A973569BA094650:
+                            #log('[pattern matching] WRONG HASH HERE OR SOMETHING')
                         generated_translations[new_native_hash] = old_native_hash
                         generated_translations_rev[old_native_hash] = new_native_hash
                         added_translations += 1
@@ -302,6 +303,8 @@ with open(old_crossmap_filename, "r") as cmf:
 
 # native specific call count matching attempt
 
+log('=> attempting native specific call count matching...')
+
 fallback_call_count_matching = {}
 script_keys = list(old_script_data)
 for i in range(len(script_keys)):
@@ -332,7 +335,7 @@ for i in range(len(script_keys)):
                     else:
                         fallback_call_count_matching[old_table[j]][new_table[call_count_keys[k]]] += 1
                         
-log('[debug] %s' % fallback_call_count_matching)
+#log('[debug] %s' % fallback_call_count_matching)
 
 recovered_translations = 0
 fallback_call_count_matching_keys = list(fallback_call_count_matching)
@@ -365,6 +368,8 @@ for i in range(len(script_keys)):
     if len(new_script_data[script_keys[i]]['calls']) != 0:
         do_pattern_based_translation(old_script_data[script_keys[i]], new_script_data[script_keys[i]], script_keys[i][:-9], True)
 
+# todo: bruteforce or something idfk anymore
+
 
 #
 # stage 5: universalize and write the translations as the final crossmap
@@ -385,7 +390,7 @@ duration = stop_time - start_time
 
 # debug
 wrong_count = 0
-with open('1604_crossmap.txt', "r") as cmf:
+with open('1493_crossmap.txt', "r") as cmf:
     line = True
     while line:
         line = cmf.readline()
@@ -399,5 +404,8 @@ with open('1604_crossmap.txt', "r") as cmf:
                 wrong_count += 1
 
 log('[crossmap verifier] summary: %d/%d, %d%% - %d missing, %d wrong, %d%% accuracy - took %dm%ds' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, ((len(generated_crossmap) - wrong_count) / len(generated_crossmap) * 100), duration // 60, duration % 60))
+
+# [1493 -> 1604] summary: 5143/5210, 98% - 67 missing, 1 wrong, 99% accuracy - took 7m45s
+# [1365 -> 1493] summary: 5126/5210, 98% - 84 missing, 16 wrong, 99% accuracy - took 27m31s
 
 logf.close()
