@@ -8,9 +8,9 @@ import datetime
 import operator
 
 
-old_script_foldername = 'game_scripts\\1365'
-old_crossmap_filename = '1365_crossmap.txt'
-new_script_foldername = 'game_scripts\\1493'
+old_script_foldername = 'game_scripts\\1493'
+old_crossmap_filename = '1493_crossmap.txt'
+new_script_foldername = 'game_scripts\\1604'
 new_crossmap_filename = 'crossmap_out.txt'
 log_filename = 'logfile.txt'
 
@@ -23,12 +23,14 @@ generated_translations = {}
 generated_translations_rev = {} # for fast reverse lookup
 old_crossmap_rev = {}
 
+inconsistency_count = 0
 
 logf = open(log_filename, "w")
 
-def log(message):
+def log(message, silently=False):
     timestamped = '%s %s' % (datetime.datetime.now().strftime("[%d-%m-%Y %H:%M:%S]"), message)
-    print(timestamped)
+    if not silently:
+        print(timestamped)
     logf.write(timestamped + '\n')
 
 def parse_native_calls(script_file_path):
@@ -115,6 +117,8 @@ def parse_native_calls(script_file_path):
 
 start_time = time.time()
 
+inconsistency_count = 0
+
 #
 # stage 1: parse native table and native calls (instruction offset and native table index)
 #          on script files that exist both on old and new release, then perform initial
@@ -153,7 +157,8 @@ for i in range(len(files_list)):
                 generated_translations_rev[old_native_hash] = new_native_hash
                 added_translations += 1
             elif generated_translations[new_native_hash] != None and generated_translations[new_native_hash] != old_native_hash:
-                log('[call count matching] WARNING: conflict found on 0x%016X, skipping for now...' % new_native_hash)
+                log('[call count matching] WARNING: conflict found on 0x%016X, skipping for now...' % new_native_hash, True)
+                inconsistency_count += 1
                 if generated_translations[new_native_hash] in generated_translations_rev:
                     del generated_translations_rev[generated_translations[new_native_hash]]
                 generated_translations[new_native_hash] = None
@@ -168,7 +173,7 @@ while i < len(generated_translations):
     else:
         del generated_translations[key]
 
-log('[call count matching] === translated %d natives! ===' % len(generated_translations))
+log('[call count matching] === translated %d natives, skipped %d with conflicting results ===' % (len(generated_translations), inconsistency_count))
 
 
 #
@@ -226,6 +231,7 @@ def generate_pattern(old_script, new_script, offset=0, low_accuracy=False):
         return []
     return largest_match
 
+inconsistency_count = 0
 
 def do_pattern_based_translation(script_old, script_new, script_name='script', second_stage=False):
     old_calls = script_old['calls']
@@ -263,7 +269,9 @@ def do_pattern_based_translation(script_old, script_new, script_name='script', s
                         generated_translations_rev[old_native_hash] = new_native_hash
                         added_translations += 1
                     elif (not second_stage) and generated_translations[new_native_hash] != old_native_hash:
-                        log('[pattern matching] %s: WARNING: inconsistent result for 0x%016X...' % (script_name, new_native_hash))
+                        log('[pattern matching] %s: WARNING: inconsistent result for 0x%016X...' % (script_name, new_native_hash), True)
+                        global inconsistency_count
+                        inconsistency_count += 1
                 if added_translations > 0:
                     log('[pattern matching] %s (%d%%): [%d:%d] at %d (%d elements) (+%d, total: %d)' % (script_name, int(old_pattern_end / len(old_calls) * 100), old_pattern_start, old_pattern_end, pattern_start, pattern_len, added_translations, len(generated_translations)))
         offset += 1
@@ -351,22 +359,26 @@ for i in range(len(fallback_call_count_matching_keys)):
         continue
     new_hash = upvoted_hash[0]
     if new_hash in generated_translations and generated_translations[new_hash] != old_hash:
-        log('[fallback matching] WARNING: found conflict on 0x%016X...' % new_hash)
+        log('[fallback matching] WARNING: found conflict on 0x%016X...' % new_hash, True)
     else:
         generated_translations[new_hash] = old_hash
         generated_translations_rev[old_hash] = new_hash
         recovered_translations += 1
 
-log('[fallback matching] recovered %d translation(s)' % recovered_translations)
+log('[fallback matching] === recovered %d translation(s) ===' % recovered_translations)
 
 # low accuracy pattern matching attempt
 
 log('=> performing a second pass of pattern matching in low accuracy mode...')
 
+old_crossmap_size = len(generated_translations)
+
 script_keys = list(old_script_data)
 for i in range(len(script_keys)):
     if len(new_script_data[script_keys[i]]['calls']) != 0:
         do_pattern_based_translation(old_script_data[script_keys[i]], new_script_data[script_keys[i]], script_keys[i][:-9], True)
+
+log('[pattern matching] === 2nd pass: recovered %d translation(s) ===' % (len(generated_translations) - old_crossmap_size))
 
 # todo: bruteforce or something idfk anymore
 
@@ -390,7 +402,7 @@ duration = stop_time - start_time
 
 # debug
 wrong_count = 0
-with open('1493_crossmap.txt', "r") as cmf:
+with open('1604_crossmap.txt', "r") as cmf:
     line = True
     while line:
         line = cmf.readline()
@@ -400,12 +412,12 @@ with open('1493_crossmap.txt', "r") as cmf:
         hash_tuple = (int(hash_tuple[0], 0), int(hash_tuple[1], 0))
         if hash_tuple[0] in generated_crossmap:
             if generated_crossmap[hash_tuple[0]] != hash_tuple[1]:
-                log('[crossmap verifier] found wrong result on 0x%016X :( (got: 0x%016X, expected: 0x%016X)' % (hash_tuple[0], generated_crossmap[hash_tuple[0]], hash_tuple[1]))
+                log('[crossmap verifier] found wrong result on 0x%016X :( (got: 0x%016X, expected: 0x%016X)' % (hash_tuple[0], generated_crossmap[hash_tuple[0]], hash_tuple[1]), True)
                 wrong_count += 1
 
-log('[crossmap verifier] summary: %d/%d, %d%% - %d missing, %d wrong, %d%% accuracy - took %dm%ds' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, ((len(generated_crossmap) - wrong_count) / len(generated_crossmap) * 100), duration // 60, duration % 60))
+log('[crossmap verifier] summary: %d/%d, %d%% - %d missing, %d wrong (%d collision(s)) - took %dm%ds' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, inconsistency_count, duration // 60, duration % 60))
 
-# [1493 -> 1604] summary: 5143/5210, 98% - 67 missing, 1 wrong, 99% accuracy - took 7m45s
-# [1365 -> 1493] summary: 5126/5210, 98% - 84 missing, 16 wrong, 99% accuracy - took 27m31s
+# [1604 -> 1604] summary: 5143/5210, 98% - 67 missing, 1 wrong, (0 collision(s)) - took 7m45s
+# [1493 -> 1604] summary: 5126/5210, 98% - 84 missing, 16 wrong (4164 collision(s)) - took 27m31s
 
 logf.close()
