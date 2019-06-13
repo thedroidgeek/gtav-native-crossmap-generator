@@ -95,8 +95,10 @@ def parse_native_calls(script_file_path):
             elif bytecode[offset] == 40 or bytecode[offset] == 41:
                 offset += 4
             elif bytecode[offset] == 44: # native
+                native_return_size = bytecode[offset + 1] & 3
+                native_arg_count = bytecode[offset + 1] >> 2
                 native_index = (bytecode[offset + 2] << 8) | bytecode[offset + 3]
-                script_native_call_data['calls'].append((native_index, (offset - last_offset) if last_offset > 0 else 0))
+                script_native_call_data['calls'].append((native_index, (offset - last_offset) if last_offset > 0 else 0, native_return_size, native_arg_count))
                 last_offset = offset
                 offset += 3
             elif bytecode[offset] == 45: # enter
@@ -203,6 +205,12 @@ def generate_pattern(old_script, new_script, offset=0, low_accuracy=False):
             # compare offset
             if (not low_accuracy) and new_calls[i + j][1] != old_calls[j + offset][1]:
                 break
+            # compare return size
+            if new_calls[i + j][2] != old_calls[j + offset][2]:
+                break
+            # compare arg count
+            if new_calls[i + j][3] != old_calls[j + offset][3]:
+                break
             # compare hash, if possible
             if old_table[old_calls[j + offset][0]] in generated_translations_rev:
                 if new_table[new_calls[i + j][0]] != generated_translations_rev[old_table[old_calls[j + offset][0]]]:
@@ -219,11 +227,14 @@ def generate_pattern(old_script, new_script, offset=0, low_accuracy=False):
     pattern = old_calls[offset : offset + largest_match[1] - largest_match[0]]
     for i in range(len(old_calls) - (len(pattern) - 1)):
         for j in range(len(pattern)):
-            # compare hash, if mapped, in low accuracy mode
-            #if low_accuracy and old_table[old_calls[i + j][0]] in generated_translations_rev and old_calls[i + j][0] != pattern[j][0]:
-                #break
             # compare offset
             if old_calls[i + j][1] != pattern[j][1]:
+                break
+            # compare return size
+            if old_calls[i + j][2] != pattern[j][2]:
+                break
+            # compare arg count
+            if old_calls[i + j][3] != pattern[j][3]:
                 break
             # on match complete (last iteration)
             if j == len(pattern) - 1:
