@@ -202,19 +202,16 @@ def generate_pattern(old_script, new_script, offset=0, low_accuracy=False):
             # boundary check
             if i + j >= len(new_calls):
                 break
-            # compare offset
-            if (not low_accuracy) and new_calls[i + j][1] != old_calls[j + offset][1]:
-                break
+            # compare hash, if possible
+            if old_table[old_calls[j + offset][0]] in generated_translations_rev:
+                if new_table[new_calls[i + j][0]] != generated_translations_rev[old_table[old_calls[j + offset][0]]]:
+                    break
             # compare return size
             if new_calls[i + j][2] != old_calls[j + offset][2]:
                 break
             # compare arg count
             if new_calls[i + j][3] != old_calls[j + offset][3]:
                 break
-            # compare hash, if possible
-            if old_table[old_calls[j + offset][0]] in generated_translations_rev:
-                if new_table[new_calls[i + j][0]] != generated_translations_rev[old_table[old_calls[j + offset][0]]]:
-                    break
             # remember the largest match
             if len(largest_match) == 0 or j > largest_match[1] - largest_match[0] - 1:
                 largest_match = [i, i + j + 1]
