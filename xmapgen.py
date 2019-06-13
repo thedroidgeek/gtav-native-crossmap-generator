@@ -309,7 +309,7 @@ with open(old_crossmap_filename, "r") as cmf:
 #       (~5104 stock native translations currently generatable (~7min) from a 5210 desired goal)
 #       also, figure out why 0x6A973569BA094650 is wrongly translated according to fivem's universal crossmap
 
-# native specific call count matching attempt
+# native specific call count matching attempt (recovers NETWORK_SHOP_BEGIN_SERVICE and NETWORK_SHOP_CHECKOUT_START)
 
 log('=> attempting native specific call count matching...')
 
@@ -417,7 +417,7 @@ with open('1604_crossmap.txt', "r") as cmf:
 
 log('[crossmap verifier] summary: %d/%d, %d%% - %d missing, %d wrong (%d collision(s)) - took %dm%ds' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, inconsistency_count, duration // 60, duration % 60))
 
-# [1604 -> 1604] summary: 5143/5210, 98% - 67 missing, 1 wrong, (0 collision(s)) - took 7m45s
-# [1493 -> 1604] summary: 5126/5210, 98% - 84 missing, 16 wrong (4164 collision(s)) - took 27m31s
+# [1493 -> 1604] summary: 5143/5210, 98% - 67 missing, 1 wrong, (0 collision(s)) - took 7m45s
+# [1365 -> 1493] summary: 5126/5210, 98% - 84 missing, 16 wrong (4164 collision(s)) - took 27m31s
 
 logf.close()
