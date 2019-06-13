@@ -205,6 +205,9 @@ def generate_pattern(old_script, new_script, offset=0, low_accuracy=False):
             if old_table[old_calls[j + offset][0]] in generated_translations_rev:
                 if new_table[new_calls[i + j][0]] != generated_translations_rev[old_table[old_calls[j + offset][0]]]:
                     break
+            # compare offset
+            if (not low_accuracy) and new_calls[i + j][1] != old_calls[j + offset][1]:
+                break
             # compare return size & arg count
             if new_calls[i + j][2] != old_calls[j + offset][2]:
                 break
