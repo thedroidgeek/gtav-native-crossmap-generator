@@ -33,6 +33,9 @@ def log(message, silently=False):
         print(timestamped)
     logf.write(timestamped + '\n')
 
+def logv(message):
+    log(message, True)
+
 def parse_native_calls(script_file_path):
     with open(script_file_path, "rb") as f:
         script_native_call_data = {}
@@ -157,7 +160,7 @@ for i in range(len(files_list)):
                 generated_translations_rev[old_native_hash] = new_native_hash
                 added_translations += 1
             elif generated_translations[new_native_hash] != None and generated_translations[new_native_hash] != old_native_hash:
-                log('[call count matching] WARNING: conflict found on 0x%016X, skipping for now...' % new_native_hash, True)
+                logv('[call count matching] WARNING: conflict found on 0x%016X, skipping for now...' % new_native_hash)
                 inconsistency_count += 1
                 if generated_translations[new_native_hash] in generated_translations_rev:
                     del generated_translations_rev[generated_translations[new_native_hash]]
@@ -269,7 +272,7 @@ def do_pattern_based_translation(script_old, script_new, script_name='script', s
                         generated_translations_rev[old_native_hash] = new_native_hash
                         added_translations += 1
                     elif (not second_stage) and generated_translations[new_native_hash] != old_native_hash:
-                        log('[pattern matching] %s: WARNING: inconsistent result for 0x%016X...' % (script_name, new_native_hash), True)
+                        logv('[pattern matching] %s: WARNING: inconsistent result for 0x%016X...' % (script_name, new_native_hash))
                         global inconsistency_count
                         inconsistency_count += 1
                 if added_translations > 0:
@@ -359,7 +362,7 @@ for i in range(len(fallback_call_count_matching_keys)):
         continue
     new_hash = upvoted_hash[0]
     if new_hash in generated_translations and generated_translations[new_hash] != old_hash:
-        log('[fallback matching] WARNING: found conflict on 0x%016X...' % new_hash, True)
+        logv('[fallback matching] WARNING: found conflict on 0x%016X...' % new_hash)
     else:
         generated_translations[new_hash] = old_hash
         generated_translations_rev[old_hash] = new_hash
@@ -412,7 +415,7 @@ with open('1604_crossmap.txt', "r") as cmf:
         hash_tuple = (int(hash_tuple[0], 0), int(hash_tuple[1], 0))
         if hash_tuple[0] in generated_crossmap:
             if generated_crossmap[hash_tuple[0]] != hash_tuple[1]:
-                log('[crossmap verifier] found wrong result on 0x%016X :( (got: 0x%016X, expected: 0x%016X)' % (hash_tuple[0], generated_crossmap[hash_tuple[0]], hash_tuple[1]), True)
+                logv('[crossmap verifier] found wrong result on 0x%016X :( (got: 0x%016X, expected: 0x%016X)' % (hash_tuple[0], generated_crossmap[hash_tuple[0]], hash_tuple[1]))
                 wrong_count += 1
 
 log('[crossmap verifier] summary: %d/%d, %d%% - %d missing, %d wrong (%d collision(s)) - took %dm%ds' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, inconsistency_count, duration // 60, duration % 60))
