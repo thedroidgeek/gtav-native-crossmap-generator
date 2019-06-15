@@ -21,6 +21,7 @@ old_script_data = {}
 new_script_data = {}
 generated_translations = {}
 generated_translations_rev = {} # for fast reverse lookup
+translation_match_count = {}
 old_crossmap_rev = {}
 
 inconsistency_count = 0
@@ -177,7 +178,7 @@ while i < len(generated_translations):
     else:
         del generated_translations[key]
 
-log('[call count matching] === translated %d natives, skipped %d with conflicting results ===' % (len(generated_translations), inconsistency_count))
+log('[call count matching] === translated %d natives, skipped %d match(es) with conflicting results ===' % (len(generated_translations), inconsistency_count))
 
 
 #
@@ -269,16 +270,35 @@ def do_pattern_based_translation(script_old, script_new, script_name='script', s
                 for j in range(pattern_start, pattern_end):
                     old_native_hash = old_table[old_calls[offset + j - pattern_start][0]]
                     new_native_hash = new_table[new_calls[j][0]]
+                    if not second_stage:
+                        if not new_native_hash in translation_match_count:
+                            translation_match_count[new_native_hash] = {}
+                        if not old_native_hash in translation_match_count[new_native_hash]:
+                            translation_match_count[new_native_hash][old_native_hash] = 0
+                        translation_match_count[new_native_hash][old_native_hash] += 1
+                        max_count = 0
+                        for potential_old_hash in translation_match_count[new_native_hash]:
+                            if translation_match_count[new_native_hash][potential_old_hash] >= max_count:
+                                max_count = translation_match_count[new_native_hash][potential_old_hash]
+                                old_native_hash = potential_old_hash
                     if not new_native_hash in generated_translations:
                         #if new_native_hash == 0x6A973569BA094650:
                             #log('[pattern matching] WRONG HASH HERE OR SOMETHING')
                         generated_translations[new_native_hash] = old_native_hash
                         generated_translations_rev[old_native_hash] = new_native_hash
                         added_translations += 1
-                    elif (not second_stage) and generated_translations[new_native_hash] != old_native_hash:
-                        logv('[pattern matching] %s: WARNING: inconsistent result for 0x%016X...' % (script_name, new_native_hash))
-                        global inconsistency_count
-                        inconsistency_count += 1
+                    if not second_stage:
+                        if new_native_hash in generated_translations and generated_translations[new_native_hash] != old_native_hash:
+                            global inconsistency_count
+                            inconsistency_count += 1
+                            if max_count > 1:
+                                logv('[pattern matching] %s: WARNING: updating inconsistent result for 0x%016X...' % (script_name, new_native_hash))
+                                if generated_translations[new_native_hash] in generated_translations_rev:
+                                    del generated_translations_rev[generated_translations[new_native_hash]]
+                                generated_translations[new_native_hash] = old_native_hash
+                                generated_translations_rev[old_native_hash] = new_native_hash
+                            else:
+                                logv('[pattern matching] %s: WARNING: inconsistent result detected for 0x%016X...' % (script_name, new_native_hash))
                 if added_translations > 0:
                     log('[pattern matching] %s (%d%%): [%d:%d] at %d (%d elements) (+%d, total: %d)' % (script_name, int(old_pattern_end / len(old_calls) * 100), old_pattern_start, old_pattern_end, pattern_start, pattern_len, added_translations, len(generated_translations)))
         offset += 1
@@ -425,6 +445,6 @@ with open('1604_crossmap.txt', "r") as cmf:
 log('[crossmap verifier] summary: %d/%d, %d%% - %d missing, %d wrong (%d collision(s)) - took %dm%ds' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, inconsistency_count, duration // 60, duration % 60))
 
 # [1493 -> 1604] summary: 5143/5210, 98% - 67 missing, 1 wrong, (0 collision(s)) - took 7m45s
-# [1365 -> 1493] summary: 5126/5210, 98% - 84 missing, 16 wrong (4164 collision(s)) - took 27m31s
+# [1365 -> 1493] summary: 5126/5210, 98% - 70 missing, 4 wrong (40 collision(s)) - took 27m31s
 
 logf.close()
