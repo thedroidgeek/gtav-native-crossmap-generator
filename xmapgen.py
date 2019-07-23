@@ -8,9 +8,9 @@ import datetime
 import operator
 
 
-old_script_foldername = 'game_scripts\\1493'
-old_crossmap_filename = '1493_crossmap.txt'
-new_script_foldername = 'game_scripts\\1604'
+old_script_foldername = 'game_scripts\\1604'
+old_crossmap_filename = '1604_crossmap.txt'
+new_script_foldername = 'game_scripts\\1734'
 new_crossmap_filename = 'crossmap_out.txt'
 log_filename = 'logfile.txt'
 
@@ -429,7 +429,7 @@ duration = stop_time - start_time
 
 # debug
 wrong_count = 0
-with open('1604_crossmap.txt', "r") as cmf:
+'''with open('1734_crossmap.txt', "r") as cmf:
     line = True
     while line:
         line = cmf.readline()
@@ -442,7 +442,7 @@ with open('1604_crossmap.txt', "r") as cmf:
                 logv('[crossmap verifier] found wrong result on 0x%016X :( (got: 0x%016X, expected: 0x%016X)' % (hash_tuple[0], generated_crossmap[hash_tuple[0]], hash_tuple[1]))
                 wrong_count += 1
 
-log('[crossmap verifier] summary: %d/%d, %d%% - %d missing, %d wrong (%d collision(s)) - took %dm%ds' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, inconsistency_count, duration // 60, duration % 60))
+log('[crossmap verifier] summary: %d/%d, %d%% - %d missing, %d wrong (%d collision(s)) - took %dm%ds' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, inconsistency_count, duration // 60, duration % 60))'''
 
 # [1493 -> 1604] summary: 5143/5210, 98% - 67 missing, 1 wrong, (0 collision(s)) - took 7m45s
 # [1365 -> 1493] summary: 5140/5210, 98% - 70 missing, 4 wrong (40 collision(s)) - took 27m31s (probably a lot longer)
