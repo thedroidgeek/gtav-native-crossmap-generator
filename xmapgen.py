@@ -445,6 +445,6 @@ with open('1604_crossmap.txt', "r") as cmf:
 log('[crossmap verifier] summary: %d/%d, %d%% - %d missing, %d wrong (%d collision(s)) - took %dm%ds' % (len(generated_crossmap), len(old_crossmap_rev), (len(generated_crossmap) / len(old_crossmap_rev) * 100), len(old_crossmap_rev) - len(generated_crossmap), wrong_count, inconsistency_count, duration // 60, duration % 60))
 
 # [1493 -> 1604] summary: 5143/5210, 98% - 67 missing, 1 wrong, (0 collision(s)) - took 7m45s
-# [1365 -> 1493] summary: 5126/5210, 98% - 70 missing, 4 wrong (40 collision(s)) - took 27m31s
+# [1365 -> 1493] summary: 5140/5210, 98% - 70 missing, 4 wrong (40 collision(s)) - took 27m31s (probably a lot longer)
 
 logf.close()
