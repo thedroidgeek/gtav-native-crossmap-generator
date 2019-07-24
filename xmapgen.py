@@ -336,64 +336,6 @@ with open(old_crossmap_filename, "r") as cmf:
 #       (~5104 stock native translations currently generatable (~7min) from a 5210 desired goal)
 #       also, figure out why 0x6A973569BA094650 is wrongly translated according to fivem's universal crossmap
 
-# native specific call count matching attempt (recovers NETWORK_SHOP_BEGIN_SERVICE and NETWORK_SHOP_CHECKOUT_START)
-
-log('=> attempting native specific call count matching...')
-
-fallback_call_count_matching = {}
-script_keys = list(old_script_data)
-for i in range(len(script_keys)):
-    old_calls = old_script_data[script_keys[i]]['calls']
-    old_table = old_script_data[script_keys[i]]['table']
-    new_calls = new_script_data[script_keys[i]]['calls']
-    new_table = new_script_data[script_keys[i]]['table']
-    for j in range(len(old_table)):
-        if old_table[j] in old_crossmap_rev and not old_table[j] in generated_translations_rev:
-            old_count = 0
-            for k in range(len(old_calls)):
-                if old_table[old_calls[k][0]] == old_table[j]:
-                    for l in range(len(old_calls)):
-                        if old_calls[l][0] == k:
-                            old_count += 1
-            new_calls_count = {}
-            for k in range(len(new_calls)):
-                if new_calls[k][0] not in new_calls_count:
-                    new_calls_count[new_calls[k][0]] = 0
-                new_calls_count[new_calls[k][0]] += 1
-            call_count_keys = list(new_calls_count)
-            for k in range(len(call_count_keys)):
-                if new_calls_count[call_count_keys[k]] == old_count and new_table[call_count_keys[k]] not in generated_translations:
-                    if old_table[j] not in fallback_call_count_matching:
-                        fallback_call_count_matching[old_table[j]] = {}
-                    if new_table[call_count_keys[k]] not in fallback_call_count_matching[old_table[j]]:
-                        fallback_call_count_matching[old_table[j]][new_table[call_count_keys[k]]] = 1
-                    else:
-                        fallback_call_count_matching[old_table[j]][new_table[call_count_keys[k]]] += 1
-                        
-#log('[debug] %s' % fallback_call_count_matching)
-
-recovered_translations = 0
-fallback_call_count_matching_keys = list(fallback_call_count_matching)
-for i in range(len(fallback_call_count_matching_keys)):
-    old_hash = fallback_call_count_matching_keys[i]
-    new_hash_keys = list(fallback_call_count_matching[old_hash])
-    upvoted_hash = (0, 0)
-    for j in range(len(new_hash_keys)):
-        vote_count = fallback_call_count_matching[old_hash][new_hash_keys[j]]
-        if vote_count > upvoted_hash[1]:
-            upvoted_hash = (new_hash_keys[j], vote_count)
-    if upvoted_hash[1] < 10:
-        continue
-    new_hash = upvoted_hash[0]
-    if new_hash in generated_translations and generated_translations[new_hash] != old_hash:
-        logv('[fallback matching] WARNING: found conflict on 0x%016X...' % new_hash)
-    else:
-        generated_translations[new_hash] = old_hash
-        generated_translations_rev[old_hash] = new_hash
-        recovered_translations += 1
-
-log('[fallback matching] === recovered %d translation(s) ===' % recovered_translations)
-
 # low accuracy pattern matching attempt
 
 log('=> performing a second pass of pattern matching in low accuracy mode...')
